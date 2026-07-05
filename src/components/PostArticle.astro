@@ -1,0 +1,41 @@
+---
+import { render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+  /** On the feed the title links to the post's own page; on that page it doesn't */
+  linkTitle?: boolean;
+}
+
+const { post, linkTitle = false } = Astro.props;
+const { Content } = await render(post);
+const { title, date, location, weather } = post.data;
+
+const dateLabel = date.toLocaleDateString('en-GB', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
+---
+
+<article class="post" id={`post-${post.id}`} data-post-date={date.toISOString().slice(0, 10)}>
+  <h2>
+    {linkTitle ? <a href={`/posts/${post.id}/`}>{title}</a> : title}
+  </h2>
+  <p class="post-meta">
+    <span>{dateLabel}</span>
+    <span>📍 {location}</span>
+    {
+      weather && (
+        <span>
+          {weather.temp}°C, {weather.description}
+          {weather.windKmh != null && ` · wind ${weather.windKmh} km/h`}
+        </span>
+      )
+    }
+  </p>
+  <div class="post-body">
+    <Content />
+  </div>
+</article>

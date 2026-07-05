@@ -1,0 +1,147 @@
+:root {
+  --paper: #faf6ef;
+  --ink: #2b2620;
+  --ink-soft: #6b6156;
+  --accent: #b4552d;
+  --line: #e3dbcd;
+  --card: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+a {
+  color: var(--accent);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* --- site header --- */
+.site-header {
+  padding: 1.25rem 0 0.5rem;
+}
+
+.site-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  letter-spacing: -0.01em;
+}
+
+.site-header p {
+  margin: 0.15rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+/* --- stats --- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin: 1rem 0 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.stats li {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.stats .label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.stats .value {
+  font-weight: 700;
+}
+
+/* --- posts --- */
+.post {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.25rem 1.5rem;
+  margin: 0 0 1.5rem;
+  scroll-margin-top: 1rem;
+}
+
+.post h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.35rem;
+}
+
+.post h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.post h2 a:hover {
+  text-decoration: underline;
+}
+
+.post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.post-body :first-child {
+  margin-top: 0;
+}
+
+.post-body :last-child {
+  margin-bottom: 0;
+}
+
+/* --- footer --- */
+.site-footer {
+  padding: 2rem 0 3rem;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+@media (min-width: 48rem) {
+  .site-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

@@ -1,0 +1,24 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import PostArticle from '../../components/PostArticle.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const description =
+  post.data.excerpt ?? `${post.data.location} — travel log from an Iceland camper van trip.`;
+---
+
+<Base title={post.data.title} description={description}>
+  <header class="site-header wrap">
+    <p><a href={`/#post-${post.id}`}>← back to the map</a></p>
+  </header>
+
+  <main class="wrap">
+    <PostArticle post={post} />
+  </main>
+</Base>

@@ -1,0 +1,46 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import PostArticle from '../components/PostArticle.astro';
+import StatsPanel from '../components/StatsPanel.astro';
+import IcelandMap from '../components/IcelandMap.vue';
+import targets from '../data/targets.json';
+
+const posts = (await getCollection('posts')).sort(
+  (a, b) => a.data.date.valueOf() - b.data.date.valueOf(),
+);
+
+const stops = posts.map((p) => ({
+  id: p.id,
+  title: p.data.title,
+  date: p.data.date.toISOString(),
+  location: p.data.location,
+  lat: p.data.lat,
+  lng: p.data.lng,
+  excerpt: p.data.excerpt,
+}));
+---
+
+<Base
+  title="Iceland by Camper"
+  description="Two weeks around Iceland in an old camper van — the route, the stops, and everything that broke along the way."
+>
+  <header class="site-header wrap">
+    <h1>Iceland by Camper</h1>
+    <p>One old van, one summer, the whole ring road.</p>
+  </header>
+
+  <main class="wrap">
+    <IcelandMap client:load stops={stops} targets={targets} />
+
+    <StatsPanel />
+
+    <section aria-label="Travel log">
+      {posts.map((post) => <PostArticle post={post} linkTitle />)}
+    </section>
+  </main>
+
+  <footer class="site-footer wrap">
+    <p>Written from the road, published whenever there's signal.</p>
+  </footer>
+</Base>

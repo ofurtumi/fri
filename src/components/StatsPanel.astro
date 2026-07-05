@@ -1,0 +1,14 @@
+---
+import stats from '../data/stats.json';
+---
+
+<ul class="stats">
+  {
+    stats.map(({ label, value }) => (
+      <li>
+        <span class="label">{label}</span>
+        <span class="value">{value}</span>
+      </li>
+    ))
+  }
+</ul>
