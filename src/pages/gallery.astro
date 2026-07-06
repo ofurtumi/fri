@@ -2,11 +2,14 @@
 import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import PhotoCarousel from '../components/PhotoCarousel.astro';
 
 const posts = (await getCollection('posts'))
   .filter((post) => post.data.photos && post.data.photos.length > 0)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const shots = posts.flatMap((post) =>
+  post.data.photos!.map((photo) => ({ photo, post })),
+);
 ---
 
 <Base
@@ -19,42 +22,33 @@ const posts = (await getCollection('posts'))
     <p><a href="/">← back to the map</a></p>
   </header>
 
-  <main class="wrap">
-    <ol class="gallery-timeline">
+  <main class="gallery-wrap">
+    <div class="photo-masonry">
       {
-        posts.map((post) => {
-          const { title, date, location, photos } = post.data;
+        shots.map(({ photo, post }) => {
+          const { title, date, location } = post.data;
           const dateLabel = date.toLocaleDateString('en-GB', {
-            weekday: 'long',
             day: 'numeric',
             month: 'long',
           });
           return (
-            <li class="gallery-entry">
-              <p class="gallery-entry-meta">
-                <span>{dateLabel}</span>
-                <span>📍 {location}</span>
-              </p>
-              <h2>
-                <a href={`/posts/${post.id}/`}>{title}</a>
-              </h2>
-              {photos!.length > 1 ? (
-                <PhotoCarousel photos={photos!} alt={`${title}, ${location}`} />
-              ) : (
-                <Image
-                  src={photos![0]}
-                  alt={`${title}, ${location}`}
-                  widths={[400, 800, 1200]}
-                  sizes="(min-width: 48rem) 40rem, 100vw"
-                />
-              )}
-            </li>
+            <a class="masonry-item" href={`/posts/${post.id}/`}>
+              <Image
+                src={photo}
+                alt={`${title}, ${location}`}
+                widths={[300, 600, 900]}
+                sizes="(min-width: 64rem) 300px, (min-width: 48rem) 33vw, 50vw"
+              />
+              <span class="masonry-caption">
+                {dateLabel} · {location}
+              </span>
+            </a>
           );
         })
       }
-    </ol>
+    </div>
     {
-      posts.length === 0 && (
+      shots.length === 0 && (
         <p class="gallery-empty">No photos yet — they'll show up here once posts have some.</p>
       )
     }
