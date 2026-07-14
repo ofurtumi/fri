@@ -1,0 +1,15 @@
+---
+import Base from '../../layouts/Base.astro';
+import TripView from '../../components/TripView.astro';
+import { trips, type Trip } from '../../lib/trips';
+
+export function getStaticPaths() {
+  return trips.map((trip) => ({ params: { id: trip.id }, props: { trip } }));
+}
+
+const { trip } = Astro.props as { trip: Trip };
+---
+
+<Base title={`${trip.name} — Yfir Ísland`} description="Keyrum um og skoðum allt í kring." trip={trip}>
+  <TripView trip={trip} />
+</Base>

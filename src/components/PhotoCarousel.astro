@@ -1,30 +1,43 @@
 ---
 import { Image } from 'astro:assets';
-import type { ImageMetadata } from 'astro:assets';
+import type { MediaItem } from '../lib/media';
 
 interface Props {
-  photos: ImageMetadata[];
+  items: MediaItem[];
   alt: string;
 }
 
-const { photos, alt } = Astro.props;
+const { items, alt } = Astro.props;
 ---
 
 <div class="photo-carousel" data-photo-carousel>
   <div class="photo-carousel-viewport" data-lightbox-group>
     {
-      photos.map((photo, i) => (
-        <Image
-          src={photo}
-          alt={`${alt} — photo ${i + 1} of ${photos.length}`}
-          widths={[400, 800, 1200]}
-          sizes="(min-width: 48rem) 40rem, 100vw"
-          class="photo-carousel-slide"
-          data-index={i}
-          data-lightbox
-          loading={i === 0 ? 'eager' : 'lazy'}
-        />
-      ))
+      items.map((item, i) =>
+        item.kind === 'image' ? (
+          <Image
+            src={item.src}
+            alt={`${alt} — photo ${i + 1} of ${items.length}`}
+            widths={[400, 800, 1200]}
+            sizes="(min-width: 48rem) 40rem, 100vw"
+            class="photo-carousel-slide"
+            data-index={i}
+            data-lightbox
+            loading={i === 0 ? 'eager' : 'lazy'}
+          />
+        ) : (
+          <video
+            src={item.src}
+            aria-label={`${alt} — video ${i + 1} of ${items.length}`}
+            class="photo-carousel-slide"
+            data-index={i}
+            data-lightbox
+            controls
+            playsinline
+            preload="metadata"
+          />
+        ),
+      )
     }
   </div>
   <button type="button" class="photo-carousel-nav photo-carousel-prev" aria-label="Previous photo">
@@ -34,7 +47,7 @@ const { photos, alt } = Astro.props;
     ›
   </button>
   <p class="photo-carousel-count" aria-hidden="true">
-    <span data-current>1</span> / {photos.length}
+    <span data-current>1</span> / {items.length}
   </p>
 </div>
 
@@ -46,7 +59,10 @@ const { photos, alt } = Astro.props;
 
     function show(index: number) {
       current = (index + slides.length) % slides.length;
-      slides.forEach((slide, i) => slide.classList.toggle('is-active', i === current));
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('is-active', i === current);
+        if (slide instanceof HTMLVideoElement && i !== current) slide.pause();
+      });
       if (counter) counter.textContent = String(current + 1);
     }
 
@@ -85,6 +101,13 @@ const { photos, alt } = Astro.props;
     visibility: hidden;
     transition: opacity 0.2s ease;
     cursor: zoom-in;
+  }
+
+  /* Videos play inline via their own controls, they don't open the lightbox */
+  video.photo-carousel-slide {
+    cursor: default;
+    object-fit: contain;
+    background: #000;
   }
 
   .photo-carousel-slide.is-active {

@@ -2,6 +2,7 @@
   <button type="button" class="lightbox-close" aria-label="Close">×</button>
   <button type="button" class="lightbox-nav lightbox-prev" aria-label="Previous photo">‹</button>
   <img class="lightbox-image" alt="" />
+  <video class="lightbox-video" controls playsinline hidden></video>
   <button type="button" class="lightbox-nav lightbox-next" aria-label="Next photo">›</button>
   <p class="lightbox-caption"></p>
 </dialog>
@@ -10,25 +11,39 @@
   const dialog = document.getElementById('lightbox') as HTMLDialogElement | null;
   if (dialog) {
     const image = dialog.querySelector('.lightbox-image') as HTMLImageElement;
+    const video = dialog.querySelector('.lightbox-video') as HTMLVideoElement;
     const caption = dialog.querySelector('.lightbox-caption') as HTMLElement;
 
-    let group: HTMLImageElement[] = [];
+    type MediaEl = HTMLImageElement | HTMLVideoElement;
+    let group: MediaEl[] = [];
     let current = 0;
 
     function show(index: number) {
       current = (index + group.length) % group.length;
       const source = group[current];
-      image.src = source.currentSrc || source.src;
-      image.alt = source.alt;
-      caption.textContent = source.dataset.caption ?? source.alt;
+      video.pause();
+      const isVideo = source instanceof HTMLVideoElement;
+      image.hidden = isVideo;
+      video.hidden = !isVideo;
+      if (isVideo) {
+        video.src = source.src;
+        caption.textContent =
+          source.dataset.caption ?? source.getAttribute('aria-label') ?? '';
+      } else {
+        image.src = source.currentSrc || source.src;
+        image.alt = source.alt;
+        caption.textContent = source.dataset.caption ?? source.alt;
+      }
     }
 
-    function open(clicked: HTMLImageElement, groupEls: HTMLImageElement[]) {
+    function open(clicked: MediaEl, groupEls: MediaEl[]) {
       group = groupEls;
       show(group.indexOf(clicked));
       dialog.showModal();
     }
 
+    // Only images open the lightbox — a click on an inline <video> has to
+    // operate its controls. Videos are still reachable via prev/next.
     document.addEventListener('click', (event) => {
       const target = (event.target as HTMLElement).closest<HTMLImageElement>('img[data-lightbox]');
       if (!target) return;
@@ -39,7 +54,9 @@
       if (!container) return;
 
       event.preventDefault();
-      const groupEls = Array.from(container.querySelectorAll<HTMLImageElement>('img[data-lightbox]'));
+      const groupEls = Array.from(
+        container.querySelectorAll<MediaEl>('img[data-lightbox], video[data-lightbox]'),
+      );
       open(target, groupEls);
     });
 
@@ -50,6 +67,8 @@
     dialog.addEventListener('click', (event) => {
       if (event.target === dialog) dialog.close();
     });
+
+    dialog.addEventListener('close', () => video.pause());
 
     dialog.addEventListener('keydown', (event) => {
       if (event.key === 'ArrowRight') show(current + 1);
@@ -81,10 +100,16 @@
     height: 100vh;
   }
 
-  .lightbox-image {
+  .lightbox-image,
+  .lightbox-video {
     max-width: min(92vw, 60rem);
     max-height: 82vh;
     object-fit: contain;
+  }
+
+  .lightbox-image[hidden],
+  .lightbox-video[hidden] {
+    display: none;
   }
 
   .lightbox-caption {

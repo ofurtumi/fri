@@ -9,9 +9,14 @@ body {
 @media (min-width: 48rem) {
   body {
     display: grid;
+    gap: 1rem;
     grid-template-columns: 16rem min(42rem, 100%);
     place-content: center;
   }
+}
+
+main {
+  padding: 1rem 0;
 }
 
 /* --- site header --- */
@@ -27,8 +32,18 @@ body {
     align-items: center;
   }
 
-  nav {
+  .site-panel {
     font-size: 2rem;
+    a {
+      text-decoration: none;
+    }
+  }
+
+  .trip-panel {
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
   }
 }
 
@@ -57,6 +72,88 @@ body {
   margin: 0.25rem 0 0;
   color: var(--ink-soft);
   font-size: 0.95rem;
+}
+
+/* --- trip nav --- */
+.menu-toggle {
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}
+
+/* Mobile: the trip list is a slide-out drawer */
+.trip-panel {
+  position: fixed;
+  inset: 0 30% 0 0;
+  z-index: 10;
+  background: var(--paper);
+  border-right: 1px solid var(--line);
+  padding: 1rem;
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+  overflow-y: auto;
+}
+
+body.menu-open .trip-panel {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trip-panel {
+    transition: none;
+  }
+}
+
+.trips-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+}
+
+.trips ul {
+  margin: 0;
+  padding: 0.5rem;
+  list-style: none;
+  border: 1px solid var(--line);
+}
+
+.trips li {
+  padding: 0.2rem 0;
+  border-bottom: 1px dotted var(--line);
+}
+
+.trips li:last-child {
+  border-bottom: none;
+}
+
+.trips a[aria-current="page"] {
+  font-weight: bold;
+}
+
+.trips a[aria-current="page"]::before {
+  content: "▸ ";
+}
+
+@media (min-width: 48rem) {
+  .menu-toggle {
+    display: none;
+  }
+
+  /* Desktop: same element sits statically in the sidebar */
+  .trip-panel {
+    position: static;
+    transform: none;
+    border: none;
+    padding: 0;
+    overflow: visible;
+  }
 }
 
 /* --- stats --- */

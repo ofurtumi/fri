@@ -19,12 +19,17 @@ decisions and build status, `android/README.md` for the app.
   by design.
 - The Android app publishes via GitHub's Git Data API (no git on device); its
   markdown output must match the site's content schema. Change the schema →
-  update `Post.kt` (app) and `scripts/fetch-weather.mjs` together.
+  update `Post.kt` + `Frontmatter.kt` (app) and `scripts/fetch-weather.mjs`
+  together.
+- Trips: posts carry a `trip:` id pointing into `src/data/trips.json` (name,
+  start point, per-trip stats); GPS traces live in `src/data/routes/<tripId>.json`.
+  `src/lib/trips.ts` is the site's single accessor — `/` renders the latest
+  trip, `/trips/<id>/` the rest. The app mirrors the Trip shape in `Trips.kt`.
 - Deploys: every push to `main` rebuilds the site.
 
 ## Conventions
 
 - Keep the site lightweight: no new client-side dependencies without a reason;
   prefer build-time work.
-- Data files are hand-editable on purpose (`stats.json`, `targets.json`) —
-  keep them simple flat structures.
+- Data files are hand-editable on purpose (`trips.json`, `targets.json`,
+  `routes/*.json`) — keep them simple flat structures.

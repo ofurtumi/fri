@@ -3,17 +3,23 @@ import '../styles/layout.css'
 import '../styles/global.css';
 import Lightbox from '../components/Lightbox.astro';
 
+import StatsPanel from '../components/StatsPanel.astro';
+import { trips, latestTrip, type Trip } from '../lib/trips';
+
 interface Props {
   title: string;
   description: string;
   /** Absolute or root-relative URL to an OG image, if the page has one */
   image?: string;
+  /** Trip this page belongs to (drives stats + nav highlight); defaults to the latest */
+  trip?: Trip;
 }
 
-const { title, description, image } = Astro.props;
+const { title, description, image, trip } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = image ? new URL(image, Astro.site) : undefined;
-import StatsPanel from '../components/StatsPanel.astro';
+const latest = latestTrip();
+const current = trip ?? latest;
 ---
 
 <!doctype html>
@@ -40,15 +46,66 @@ import StatsPanel from '../components/StatsPanel.astro';
           <h1>Yfir Ísland</h1>
           <p>Gamall bíll, stemmning, stengur og bjór</p>
         </div>
-        <nav>
+        <nav class="site-panel" id="site-nav">
           <a href="/gallery/" tooltip="Skoða myndir">📷</a>
           <a href="/" tooltip="Skoða færslur">📖</a>
+          <button
+            class="menu-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="trip-nav"
+            aria-label="Velja ferð">☰</button>
         </nav>
       </section>
 
-      <StatsPanel />
+      <div class="trip-panel" id="trip-nav">
+        <nav class="trips" aria-label="Ferðir">
+          <p class="trips-label">Ferðir</p>
+          <ul>
+            {
+              [...trips].reverse().map((t) => (
+                <li>
+                  <a
+                    href={t.id === latest.id ? '/' : `/trips/${t.id}/`}
+                    aria-current={t.id === current.id ? 'page' : undefined}
+                  >
+                    {t.name}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
+
+      <StatsPanel stats={current.stats} />
     </header>
+
     <slot />
+
+    <footer class="site-footer wrap">
+      <p>Skrifað á leiðinni einhvert. Hægt að skoða annað eftir mig á <a href="https://sjomli.is">sjomli.is</a></p>
+    </footer>
+
     <Lightbox />
+
+    <script>
+      const toggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
+      const panel = document.getElementById('trip-nav');
+      const close = () => {
+        document.body.classList.remove('menu-open');
+        toggle?.setAttribute('aria-expanded', 'false');
+      };
+      toggle?.addEventListener('click', () => {
+        const open = document.body.classList.toggle('menu-open');
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+      panel?.addEventListener('click', (event) => {
+        if ((event.target as HTMLElement).closest('a')) close();
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') close();
+      });
+    </script>
   </body>
 </html>

@@ -110,6 +110,12 @@ img {
   cursor: zoom-in;
 }
 
+.masonry-item video {
+  display: block;
+  width: 100%;
+  background: #000;
+}
+
 .masonry-caption {
   display: block;
   padding: 0.4rem 0.6rem;
@@ -124,12 +130,6 @@ img {
 @media (min-width: 40rem) {
   .photo-masonry {
     column-count: 3;
-  }
-}
-
-@media (min-width: 64rem) {
-  .photo-masonry {
-    column-count: 4;
   }
 }
 

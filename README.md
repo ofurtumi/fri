@@ -68,12 +68,20 @@ Vue. See `project-plan.md` for the design and current status.
    looping carousel on the home feed and `/gallery`, and as a full grid on
    the post's own page.
 
+   Short videos work the same way under a `videos:` key (`./day-5/clip-1.mp4`
+   in the same folder). Keep them tiny — the app transcodes to ~270p; from a
+   laptop do the equivalent with
+   `ffmpeg -i in.mp4 -vf scale=-2:270 -c:v libx264 -c:a aac clip-1.mp4`.
+   A `trip:` key ties the post to a trip in `src/data/trips.json` (posts
+   without one are date-bucketed into the nearest trip).
+
 2. `npm run weather` — fetches that day's weather from Open-Meteo by date +
    coordinates and freezes it into the frontmatter. Posts that already have a
    `weather:` block are never touched, so to override a nonsense value just
    write the block yourself (or edit what the script wrote).
 
-3. Update `src/data/stats.json` (the key-value panel) if the numbers moved.
+3. Update the trip's `stats` in `src/data/trips.json` (the key-value panel)
+   if the numbers moved.
 
 4. Commit and push — the host rebuilds and deploys.
 
@@ -108,8 +116,12 @@ touching `android/` also trigger a (harmless) site rebuild.
 timeline with date and location — it's just another static page, generated
 from the same `photos:` frontmatter.
 
-Data files the site reads: posts in `src/content/posts/`, stats in
-`src/data/stats.json`, planned destinations in `src/data/targets.json`, map
-geometry in `src/data/iceland-map.json` (generated, committed). The app also
-commits a GPS trace to `src/data/route.json`, which the site does not render
-yet.
+Data files the site reads: posts in `src/content/posts/`, trips (name, start
+point, per-trip stats) in `src/data/trips.json`, GPS traces in
+`src/data/routes/<tripId>.json` (committed by the app, drawn as the driven
+route on the map), planned destinations in `src/data/targets.json`, map
+geometry in `src/data/iceland-map.json` (generated, committed).
+
+Trips: `/` shows the latest trip — its posts, stats and route; older trips
+live at `/trips/<id>/` via the sidebar list (a slide-out menu on mobile).
+`/gallery` stays trip-agnostic.

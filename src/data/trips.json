@@ -1,0 +1,22 @@
+[
+  {
+    "id": "helgarferd-2026-07",
+    "name": "Helgarferð norður",
+    "start": { "name": "Reykjavík", "lat": 64.1395, "lng": -21.8958 },
+    "startDate": "2026-07-10",
+    "stats": [
+      { "label": "Stenmning", "value": "Góð" },
+      { "label": "Fiskar", "value": "Engir" }
+    ]
+  },
+  {
+    "id": "testferd-2026-07",
+    "name": "Testferð",
+    "start": { "name": "Reykjavík", "lat": 64.1395, "lng": -21.8958 },
+    "startDate": "2026-07-01",
+    "stats": [
+      { "label": "Stenmning", "value": "Frábær" },
+      { "label": "Fiskar", "value": "29" }
+    ]
+  }
+]

@@ -12,9 +12,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import app.fri.ui.PostEditorScreen
+import app.fri.ui.PostListScreen
 import app.fri.ui.SettingsScreen
 import app.fri.ui.StatsScreen
 import app.fri.ui.TripScreen
+import app.fri.ui.TripsScreen
 
 private val CamperColors = lightColorScheme(
     primary = Color(0xFFB4552D),
@@ -41,7 +43,12 @@ private fun AppNav() {
     val nav = rememberNavController()
     NavHost(navController = nav, startDestination = "trip") {
         composable("trip") { TripScreen(nav) }
+        composable("trips") { TripsScreen(nav) }
+        composable("posts") { PostListScreen(nav) }
         composable("post") { PostEditorScreen(nav) }
+        composable("post/{slug}") { entry ->
+            PostEditorScreen(nav, editSlug = entry.arguments?.getString("slug"))
+        }
         composable("stats") { StatsScreen(nav) }
         composable("settings") { SettingsScreen(nav) }
     }

@@ -1,6 +1,7 @@
 ---
 title: 'Kíkja á stangann'
 date: 2026-07-10
+trip: helgarferd-2026-07
 location: Hvammstangi
 lat: 65.3936
 lng: -20.9393

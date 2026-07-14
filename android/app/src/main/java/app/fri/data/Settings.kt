@@ -35,6 +35,8 @@ class SettingsStore(private val context: Context) {
         val token = stringPreferencesKey("token")
         val authorName = stringPreferencesKey("author_name")
         val authorEmail = stringPreferencesKey("author_email")
+        val activeTripId = stringPreferencesKey("active_trip_id")
+        val activeTripName = stringPreferencesKey("active_trip_name")
     }
 
     val settings: Flow<RepoSettings> = context.store.data.map { p ->
@@ -49,6 +51,21 @@ class SettingsStore(private val context: Context) {
     }
 
     suspend fun current(): RepoSettings = settings.first()
+
+    /** The trip new posts, GPS points and stats edits belong to. Null until one is chosen. */
+    val activeTrip: Flow<Pair<String, String>?> = context.store.data.map { p ->
+        val id = p[Keys.activeTripId]
+        if (id.isNullOrBlank()) null else id to (p[Keys.activeTripName] ?: id)
+    }
+
+    suspend fun currentActiveTrip(): Pair<String, String>? = activeTrip.first()
+
+    suspend fun setActiveTrip(id: String, name: String) {
+        context.store.edit { p ->
+            p[Keys.activeTripId] = id
+            p[Keys.activeTripName] = name
+        }
+    }
 
     suspend fun save(s: RepoSettings) {
         context.store.edit { p ->

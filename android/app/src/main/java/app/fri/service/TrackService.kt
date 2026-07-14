@@ -16,6 +16,8 @@ import app.fri.App
 import app.fri.MainActivity
 import app.fri.R
 import app.fri.data.RouteLog
+import app.fri.data.SettingsStore
+import kotlinx.coroutines.runBlocking
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -29,10 +31,13 @@ import com.google.android.gms.location.Priority
  */
 class TrackService : Service() {
 
+    private var tripId: String? = null
+
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             val loc = result.lastLocation ?: return
-            RouteLog.append(this@TrackService, loc.latitude, loc.longitude, loc.time)
+            val trip = tripId ?: return
+            RouteLog.append(this@TrackService, trip, loc.latitude, loc.longitude, loc.time)
         }
     }
 
@@ -40,6 +45,14 @@ class TrackService : Service() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
         ) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        // Read (not passed as an intent extra) so a STICKY restart with a null
+        // intent still logs to the right trip. One quick DataStore read.
+        tripId = runBlocking { SettingsStore(this@TrackService).currentActiveTrip()?.first }
+        if (tripId == null) {
             stopSelf()
             return START_NOT_STICKY
         }

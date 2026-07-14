@@ -1,0 +1,48 @@
+---
+import { getCollection } from 'astro:content';
+import PostArticle from './PostArticle.astro';
+import IcelandMap from './IcelandMap.vue';
+import targets from '../data/targets.json';
+import { routeFor, tripIdFor, type Trip } from '../lib/trips';
+
+interface Props {
+  trip: Trip;
+}
+
+const { trip } = Astro.props;
+
+// Feed shows newest first; the map needs stops oldest-first (the route
+// polyline connects them in array order)
+const posts = (await getCollection('posts'))
+  .filter((p) => tripIdFor(p) === trip.id)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const stops = [...posts]
+  .sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf())
+  .map((p) => ({
+  id: p.id,
+  title: p.data.title,
+  date: p.data.date.toISOString(),
+  location: p.data.location,
+  lat: p.data.lat,
+  lng: p.data.lng,
+  excerpt: p.data.excerpt,
+}));
+
+const route = routeFor(trip.id);
+---
+
+<main class="wrap">
+  <IcelandMap
+    client:load
+    stops={stops}
+    targets={targets}
+    route={route}
+    start={trip.start}
+    startDate={trip.startDate}
+  />
+
+  <section aria-label="Travel log">
+    {posts.map((post) => <PostArticle post={post} linkTitle />)}
+  </section>
+</main>

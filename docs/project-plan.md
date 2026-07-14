@@ -53,11 +53,19 @@ Until the app exists, the manual fallback works fine: edit markdown and upload p
 2. ✅ SVG map: stops, straight-line route, viewBox zoom, clustering, target points.
 3. ✅ Time scrubber wired to both the map and the post list.
 4. ✅ Stats panel + weather-at-build pipeline.
-5. 🚧 Android companion app — fully scaffolded in `android/`, not yet compiled/tested
-   on a real device (see `android/README.md`).
+5. 🚧 Android companion app — compiles, unit tests pass; not yet exercised on a
+   real device (see `android/README.md`).
+6. ✅ Trips (`docs/upgrades.md`): posts/stats/route grouped per trip in
+   `src/data/trips.json` + `src/data/routes/<id>.json`; sidebar trip picker
+   (mobile slide-out); `/` = latest trip, `/trips/<id>/` for the rest; GPS
+   trace drawn as the driven route with a trip start marker; straight lines
+   remain as the no-trace fallback.
+7. ✅ Videos: `videos:` frontmatter renders in the carousel/grid/gallery/
+   lightbox; the app picks clips and transcodes them on-device to ~270p
+   H.264 (the low-fi look is the point) before committing.
+8. ✅ App: trip management + active trip, per-trip GPS logs and stats, post
+   list grouped by trip, full editing of published posts (slug preserved,
+   media add-only, strict frontmatter parser refuses posts with unknown keys).
 
-Remaining ideas beyond the build order: render `route.json` (the GPS trace the
-app commits) as the actual driven route instead of straight lines; markdown
-preview and post-editing in the app; a targets editor. The sample posts in
-`src/content/posts/` (days 1–4, July 2026) are placeholders — delete them when
-the real trip starts.
+Remaining ideas beyond the build order: markdown preview in the app; a targets
+editor; deleting published posts from the app.

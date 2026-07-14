@@ -2,6 +2,7 @@ package app.fri.ui
 
 import android.Manifest
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,17 +37,26 @@ import app.fri.data.RouteLog
 import app.fri.data.SettingsStore
 import app.fri.service.TrackService
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 @Composable
 fun TripScreen(nav: NavController) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var tracking by remember { mutableStateOf(TrackService.running) }
     var pendingCount by remember { mutableIntStateOf(PublishQueue.pending(context).size) }
-    var pointCount by remember { mutableIntStateOf(RouteLog.pointCount(context)) }
     val configured = remember {
         runBlocking { SettingsStore(context).settings.first().configured }
     }
+    val activeTrip = remember {
+        runBlocking { SettingsStore(context).currentActiveTrip() }
+    }
+    var pointCount by remember {
+        mutableIntStateOf(activeTrip?.let { RouteLog.pointCount(context, it.first) } ?: 0)
+    }
+
+    fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
@@ -84,6 +95,7 @@ fun TripScreen(nav: NavController) {
                     Text("Record route", style = MaterialTheme.typography.titleMedium)
                     Switch(
                         checked = tracking,
+                        enabled = activeTrip != null,
                         onCheckedChange = { on ->
                             if (on) {
                                 val perms = mutableListOf(
@@ -101,10 +113,34 @@ fun TripScreen(nav: NavController) {
                         },
                     )
                 }
-                Text(
-                    "$pointCount GPS points logged so far. The trace goes up with the next publish.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                if (activeTrip == null) {
+                    Text(
+                        "Pick or create a trip first — GPS points belong to a trip.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                } else {
+                    Text(
+                        "Trip: ${activeTrip.second} · $pointCount GPS points logged. " +
+                            "The trace goes up with the next post, or push it now.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    OutlinedButton(onClick = {
+                        scope.launch {
+                            val bytes = RouteLog.toRouteJsonBytes(context, activeTrip.first)
+                            if (bytes == null) {
+                                toast("No GPS points logged yet")
+                            } else {
+                                PublishQueue.enqueue(
+                                    context,
+                                    "Update route: ${activeTrip.second}",
+                                    mapOf(RouteLog.repoPath(activeTrip.first) to bytes),
+                                )
+                                pendingCount = PublishQueue.pending(context).size
+                                toast("Route queued — publishes when there's signal")
+                            }
+                        }
+                    }) { Text("Publish route now") }
+                }
             }
         }
 
@@ -130,6 +166,12 @@ fun TripScreen(nav: NavController) {
 
         Button(onClick = { nav.navigate("post") }, modifier = Modifier.fillMaxWidth()) {
             Text("New post")
+        }
+        OutlinedButton(onClick = { nav.navigate("posts") }, modifier = Modifier.fillMaxWidth()) {
+            Text("Posts")
+        }
+        OutlinedButton(onClick = { nav.navigate("trips") }, modifier = Modifier.fillMaxWidth()) {
+            Text("Trips")
         }
         OutlinedButton(onClick = { nav.navigate("stats") }, modifier = Modifier.fillMaxWidth()) {
             Text("Trip stats")

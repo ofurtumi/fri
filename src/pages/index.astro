@@ -1,39 +1,11 @@
 ---
-import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import PostArticle from '../components/PostArticle.astro';
-import StatsPanel from '../components/StatsPanel.astro';
-import IcelandMap from '../components/IcelandMap.vue';
-import targets from '../data/targets.json';
+import TripView from '../components/TripView.astro';
+import { latestTrip } from '../lib/trips';
 
-const posts = (await getCollection('posts')).sort(
-  (a, b) => a.data.date.valueOf() - b.data.date.valueOf(),
-);
-
-const stops = posts.map((p) => ({
-  id: p.id,
-  title: p.data.title,
-  date: p.data.date.toISOString(),
-  location: p.data.location,
-  lat: p.data.lat,
-  lng: p.data.lng,
-  excerpt: p.data.excerpt,
-}));
+const trip = latestTrip();
 ---
 
-<Base
-  title="Yfir Ísland"
-  description="Keyrum um og skoðum allt í kring."
->
-  <main class="wrap">
-    <IcelandMap client:load stops={stops} targets={targets} />
-
-    <section aria-label="Travel log">
-      {posts.map((post) => <PostArticle post={post} linkTitle />)}
-    </section>
-  </main>
-
-  <footer class="site-footer wrap">
-    <p>Skrifað á leiðinni einhvert annað. Hægt að skoða annað eftir mig á <a href="https://sjomli.is">sjomli.is</a></p>
-  </footer>
+<Base title="Yfir Ísland" description="Keyrum um og skoðum allt í kring." trip={trip}>
+  <TripView trip={trip} />
 </Base>

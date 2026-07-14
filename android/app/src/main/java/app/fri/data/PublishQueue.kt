@@ -19,7 +19,16 @@ import java.util.concurrent.TimeUnit
 object PublishQueue {
     private fun queueDir(context: Context) = File(context.filesDir, "queue").apply { mkdirs() }
 
-    fun enqueue(context: Context, message: String, files: Map<String, ByteArray>) {
+    /**
+     * [localFiles] (repo path -> staged file, e.g. a transcoded clip) are moved
+     * into the bundle instead of round-tripping through a ByteArray.
+     */
+    fun enqueue(
+        context: Context,
+        message: String,
+        files: Map<String, ByteArray>,
+        localFiles: Map<String, File> = emptyMap(),
+    ) {
         val bundle = File(queueDir(context), System.currentTimeMillis().toString())
         val filesDir = File(bundle, "files")
         for ((path, bytes) in files) {
@@ -27,6 +36,15 @@ object PublishQueue {
             check(target.canonicalPath.startsWith(filesDir.canonicalPath)) { "bad path: $path" }
             target.parentFile?.mkdirs()
             target.writeBytes(bytes)
+        }
+        for ((path, source) in localFiles) {
+            val target = File(filesDir, path)
+            check(target.canonicalPath.startsWith(filesDir.canonicalPath)) { "bad path: $path" }
+            target.parentFile?.mkdirs()
+            if (!source.renameTo(target)) {
+                source.copyTo(target, overwrite = true)
+                source.delete()
+            }
         }
         File(bundle, "message.txt").writeText(message)
         schedule(context)

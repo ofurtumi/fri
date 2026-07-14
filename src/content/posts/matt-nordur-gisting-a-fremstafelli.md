@@ -1,6 +1,7 @@
 ---
 title: 'Mætt norður, gisting á fremstafelli'
 date: 2026-07-11
+trip: helgarferd-2026-07
 location: Fremstafell
 lat: 65.724
 lng: -17.5513

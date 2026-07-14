@@ -4,6 +4,7 @@ package app.fri.data
 data class PostDraft(
     val title: String,
     val date: String, // yyyy-mm-dd
+    val trip: String, // trip id from trips.json, may be blank on old posts
     val location: String,
     val lat: Double,
     val lng: Double,
@@ -22,12 +23,17 @@ fun slugify(text: String): String = text
 
 /**
  * Frontmatter must match src/content.config.ts on the site — a mismatch
- * fails the site build, which is the safety net.
+ * fails the site build, which is the safety net. Key order is fixed so
+ * parsePostMarkdown() round-trips what this emits.
  */
-fun PostDraft.toMarkdown(imagePaths: List<String>): String = buildString {
+fun PostDraft.toMarkdown(
+    imagePaths: List<String>,
+    videoPaths: List<String> = emptyList(),
+): String = buildString {
     appendLine("---")
     appendLine("title: '${title.replace("'", "''")}'")
     appendLine("date: $date")
+    if (trip.isNotBlank()) appendLine("trip: $trip")
     appendLine("location: ${location.trim()}")
     appendLine("lat: $lat")
     appendLine("lng: $lng")
@@ -41,6 +47,10 @@ fun PostDraft.toMarkdown(imagePaths: List<String>): String = buildString {
     if (imagePaths.isNotEmpty()) {
         appendLine("photos:")
         for (path in imagePaths) appendLine("  - $path")
+    }
+    if (videoPaths.isNotEmpty()) {
+        appendLine("videos:")
+        for (path in videoPaths) appendLine("  - $path")
     }
     appendLine("---")
     appendLine()

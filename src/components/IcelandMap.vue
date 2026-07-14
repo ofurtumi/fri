@@ -18,9 +18,24 @@ export interface MapTarget {
   lng: number;
 }
 
+export interface RoutePoint {
+  lat: number;
+  lng: number;
+  t: number; // epoch seconds
+}
+
+export interface TripStart {
+  name: string;
+  lat: number;
+  lng: number;
+}
+
 const props = defineProps<{
   stops: MapStop[]; // chronological order
   targets: MapTarget[];
+  route?: RoutePoint[]; // logged GPS trace, chronological
+  start?: TripStart;
+  startDate?: string; // YYYY-MM-DD
 }>();
 
 const FULL = { x: 0, y: 0, w: mapSize.width, h: mapSize.height };
@@ -36,13 +51,19 @@ const isCountryView = computed(() => vb.w > FULL.w * 0.7);
 // --- timeline (day granularity, horizon semantics) ---
 
 const dayKey = (iso: string) => iso.slice(0, 10);
+// Iceland is UTC year-round, so UTC day buckets match local days
+const routeDayKey = (t: number) => dayKey(new Date(t * 1000).toISOString());
 
 const dayKeys = computed(() => {
-  if (!props.stops.length) return [] as string[];
-  const sorted = props.stops.map((s) => dayKey(s.date)).sort();
-  const last = sorted[sorted.length - 1];
+  const days = [
+    ...props.stops.map((s) => dayKey(s.date)),
+    ...(props.route ?? []).map((p) => routeDayKey(p.t)),
+    ...(props.startDate ? [props.startDate] : []),
+  ].sort();
+  if (!days.length) return [] as string[];
+  const last = days[days.length - 1];
   const out: string[] = [];
-  const d = new Date(`${sorted[0]}T00:00:00Z`);
+  const d = new Date(`${days[0]}T00:00:00Z`);
   let k = dayKey(d.toISOString());
   while (k <= last) {
     out.push(k);
@@ -61,7 +82,7 @@ const atLatest = computed(() => selectedIdx.value >= dayKeys.value.length - 1);
 const dayLabel = computed(() => {
   const k = dayKeys.value[selectedIdx.value];
   if (!k) return "";
-  return new Date(`${k}T12:00:00Z`).toLocaleDateString("en-GB", {
+  return new Date(`${k}T12:00:00Z`).toLocaleDateString("is-IS", {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -86,6 +107,14 @@ const projectedStops = computed(() =>
 const projectedTargets = computed(() =>
   props.targets.map((t) => ({ ...t, ...project(t.lat, t.lng) })),
 );
+const projectedRoute = computed(() =>
+  (props.route ?? []).map((p) => ({ t: p.t, ...project(p.lat, p.lng) })),
+);
+const projectedStart = computed(() =>
+  props.start
+    ? { ...props.start, ...project(props.start.lat, props.start.lng) }
+    : null,
+);
 
 const pastStops = computed(() =>
   projectedStops.value.filter((s) => dayKey(s.date) <= selectedKey.value),
@@ -103,6 +132,27 @@ const futureRoute = computed(() => {
   const last = pastStops.value[pastStops.value.length - 1];
   const pts = last ? [last, ...futureStops.value] : futureStops.value;
   return pts.length > 1 ? pts.map((s) => `${s.x},${s.y}`).join(" ") : "";
+});
+
+// --- the real GPS trace (replaces the straight lines when present) ---
+
+const hasGps = computed(() => projectedRoute.value.length > 1);
+// End of the selected day, as epoch seconds — same horizon semantics as stops
+const cutoffT = computed(
+  () => Date.parse(`${selectedKey.value}T23:59:59Z`) / 1000,
+);
+
+const gpsPast = computed(() => {
+  const pts = projectedRoute.value.filter((p) => p.t <= cutoffT.value);
+  return pts.length > 1 ? pts.map((p) => `${p.x},${p.y}`).join(" ") : "";
+});
+const gpsFuture = computed(() => {
+  const ahead = projectedRoute.value.filter((p) => p.t > cutoffT.value);
+  if (!ahead.length) return "";
+  const reached = projectedRoute.value.filter((p) => p.t <= cutoffT.value);
+  const last = reached[reached.length - 1];
+  const pts = last ? [last, ...ahead] : ahead;
+  return pts.length > 1 ? pts.map((p) => `${p.x},${p.y}`).join(" ") : "";
 });
 
 // --- clustering (screen-space: threshold shrinks as we zoom in) ---
@@ -205,7 +255,7 @@ function goToPost(id: string) {
   const el = document.getElementById(`post-${id}`);
   if (el && !el.hidden)
     el.scrollIntoView({ behavior: "smooth", block: "start" });
-  else window.location.assign(`/#post-${id}`);
+  else window.location.assign(`${window.location.pathname}#post-${id}`);
 }
 
 function onClusterClick(c: Cluster) {
@@ -267,6 +317,17 @@ function hoverTarget(t: MapTarget & { x: number; y: number }) {
   };
 }
 
+function hoverStart() {
+  const s = projectedStart.value;
+  if (!s) return;
+  hovered.value = {
+    title: s.name,
+    sub: props.startDate ? `upphaf · ${formatDate(props.startDate)}` : "upphaf",
+    x: s.x,
+    y: s.y,
+  };
+}
+
 function unhover() {
   hovered.value = null;
 }
@@ -299,20 +360,56 @@ function formatDate(iso: string) {
       >
         <path class="land" :d="mapPath" @click="onBackgroundClick" />
 
+        <!-- Straight stop-to-stop lines: fallback for trips without a GPS trace -->
         <polyline
-          v-if="futureRoute"
+          v-if="!hasGps && futureRoute"
           class="route future"
           :points="futureRoute"
           :stroke-width="3 * u"
           :stroke-dasharray="`${9 * u} ${7 * u}`"
         />
         <polyline
-          v-if="pastStops.length > 1"
+          v-if="!hasGps && pastStops.length > 1"
           class="route"
           :points="pastRoute"
           :stroke-width="3 * u"
           :stroke-dasharray="`${9 * u} ${7 * u}`"
         />
+
+        <!-- The actually driven route; solid so it reads as recorded, not inferred -->
+        <polyline
+          v-if="gpsFuture"
+          class="route future"
+          :points="gpsFuture"
+          :stroke-width="2.5 * u"
+        />
+        <polyline
+          v-if="gpsPast"
+          class="route"
+          :points="gpsPast"
+          :stroke-width="2.5 * u"
+        />
+
+        <g
+          v-if="projectedStart"
+          class="start"
+          @mouseenter="hoverStart"
+          @mouseleave="unhover"
+        >
+          <circle
+            class="ring"
+            :cx="projectedStart.x"
+            :cy="projectedStart.y"
+            :r="7 * u"
+            :stroke-width="2.5 * u"
+          />
+          <circle
+            class="core"
+            :cx="projectedStart.x"
+            :cy="projectedStart.y"
+            :r="2.5 * u"
+          />
+        </g>
 
         <g
           v-for="t in projectedTargets"
@@ -410,7 +507,7 @@ function formatDate(iso: string) {
         type="button"
         @click="showAll"
       >
-        ← whole country
+        ← Aftur í yfirlit
       </button>
     </div>
 
@@ -424,7 +521,7 @@ function formatDate(iso: string) {
         :aria-label="`Timeline, day ${selectedIdx + 1}: ${dayLabel}`"
       />
       <div class="scrub-info">
-        <span>Day {{ selectedIdx + 1 }} · {{ dayLabel }}</span>
+        <span>Dagur {{ selectedIdx + 1 }} · {{ dayLabel }}</span>
         <button
           v-if="!atLatest"
           type="button"
@@ -506,6 +603,15 @@ svg {
 .target circle {
   fill: none;
   stroke: #a5947a;
+}
+
+.start .ring {
+  fill: none;
+  stroke: var(--ink, #3b3428);
+}
+
+.start .core {
+  fill: var(--ink, #3b3428);
 }
 
 .tooltip {

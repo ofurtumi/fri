@@ -5,8 +5,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import okhttp3.MediaType.Companion.toMediaType
@@ -22,6 +24,8 @@ import java.util.concurrent.TimeUnit
  * One commit can carry the post, its photos, route.json and stats.json
  * atomically. All calls are blocking; run on Dispatchers.IO.
  */
+data class RepoEntry(val name: String, val path: String, val type: String, val size: Long)
+
 class GitHubClient(private val settings: RepoSettings) {
 
     private val client = OkHttpClient.Builder()
@@ -65,6 +69,25 @@ class GitHubClient(private val settings: RepoSettings) {
             if (!res.isSuccessful) throw IOException("GitHub ${res.code}: ${body.take(300)}")
             val content = field(body, "content").replace("\n", "")
             return String(Base64.decode(content, Base64.DEFAULT), Charsets.UTF_8)
+        }
+    }
+
+    /** Entries of a directory on the branch; empty if the directory doesn't exist. */
+    fun listDirectory(path: String): List<RepoEntry> {
+        val req = builder("$base/contents/$path?ref=${settings.branch}").get().build()
+        client.newCall(req).execute().use { res ->
+            if (res.code == 404) return emptyList()
+            val body = res.body?.string().orEmpty()
+            if (!res.isSuccessful) throw IOException("GitHub ${res.code}: ${body.take(300)}")
+            return json.parseToJsonElement(body).jsonArray.map { el ->
+                val o = el.jsonObject
+                RepoEntry(
+                    name = o["name"]?.jsonPrimitive?.content ?: "",
+                    path = o["path"]?.jsonPrimitive?.content ?: "",
+                    type = o["type"]?.jsonPrimitive?.content ?: "",
+                    size = o["size"]?.jsonPrimitive?.long ?: 0L,
+                )
+            }
         }
     }
 

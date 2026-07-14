@@ -1,6 +1,7 @@
 ---
 title: 'Afmæli og aftur heim'
 date: 2026-07-12
+trip: helgarferd-2026-07
 location: Akureyri - Reykjavík
 lat: 64.1457
 lng: -21.9232

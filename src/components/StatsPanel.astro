@@ -1,5 +1,9 @@
 ---
-import stats from '../data/stats.json';
+interface Props {
+  stats: { label: string; value: string }[];
+}
+
+const { stats } = Astro.props;
 ---
 
 <ul class="stats">

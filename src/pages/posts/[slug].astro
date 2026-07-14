@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import PostArticle from '../../components/PostArticle.astro';
+import { getTrip, latestTrip, tripIdFor } from '../../lib/trips';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -11,14 +12,12 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const description =
   post.data.excerpt ?? `${post.data.location} — travel log from an Iceland camper van trip.`;
+const trip = getTrip(tripIdFor(post));
+const tripBase = trip && trip.id !== latestTrip().id ? `/trips/${trip.id}/` : '/';
 ---
 
-<Base title={post.data.title} description={description}>
-  <header class="site-header wrap">
-    <p><a href={`/#post-${post.id}`}>← back to the map</a></p>
-  </header>
-
-  <main class="wrap">
+<Base title={post.data.title} description={description} trip={trip}>
+  <main>
     <PostArticle post={post} photoLayout="grid" />
   </main>
 </Base>

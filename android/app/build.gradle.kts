@@ -53,5 +53,9 @@ dependencies {
     implementation(libs.datastore.preferences)
     implementation(libs.coil.compose)
     implementation(libs.exifinterface)
+    implementation(libs.media3.transformer)
+    implementation(libs.media3.effect)
+    implementation(libs.media3.common)
+    testImplementation(libs.junit)
     debugImplementation(libs.compose.ui.tooling)
 }
