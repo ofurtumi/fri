@@ -93,6 +93,18 @@ fun TripsScreen(nav: NavController) {
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) grabLocation() }
 
+    fun refresh() {
+        scope.launch {
+            try {
+                trips = repo.load(forceRemote = true)
+                toast("Trips refreshed from GitHub")
+            } catch (e: Exception) {
+                // e.g. queued trips.json edits still waiting — remote would be stale
+                toast("Refresh failed: ${e.message}")
+            }
+        }
+    }
+
     fun setActive(trip: Trip) {
         if (TrackService.running) {
             toast("Stop route recording before switching trips")
@@ -180,6 +192,10 @@ fun TripsScreen(nav: NavController) {
                     }
                 }
             }
+        }
+
+        OutlinedButton(onClick = ::refresh, modifier = Modifier.fillMaxWidth()) {
+            Text("Refresh from GitHub")
         }
 
         HorizontalDivider()

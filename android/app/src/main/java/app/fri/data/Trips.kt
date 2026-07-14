@@ -38,18 +38,22 @@ class TripsRepository(private val context: Context) {
 
     suspend fun load(forceRemote: Boolean = false): List<Trip> = mutex.withLock {
         val cache = cacheFile()
-        if (!forceRemote && cache.exists()) return parse(cache.readText())
-        if (forceRemote) {
-            // A pending snapshot means remote is behind the cache; refreshing
-            // from it would resurrect stale state.
-            check(!pendingContainsTrips(context)) {
-                "trips.json edits are still waiting to publish"
-            }
+        val cached = cache.takeIf(File::exists)
+            ?.let { runCatching { parse(it.readText()) }.getOrNull() }
+        if (!forceRemote && !cached.isNullOrEmpty()) return cached
+        // A pending snapshot means remote is behind the cache; reading remote
+        // now would resurrect stale state. An empty/unreadable cache with no
+        // pending edits holds nothing worth protecting, so retry the remote
+        // instead of trusting it (e.g. app set up before trips.json was pushed).
+        if (pendingContainsTrips(context)) {
+            check(!forceRemote) { "trips.json edits are still waiting to publish" }
+            return cached ?: emptyList()
         }
         val settings = SettingsStore(context).current()
-        if (!settings.configured) return if (cache.exists()) parse(cache.readText()) else emptyList()
+        if (!settings.configured) return cached ?: emptyList()
         val remote = withContext(Dispatchers.IO) { GitHubClient(settings).getFileText(REPO_PATH) }
-        val trips = remote?.let(::parse) ?: emptyList()
+            ?: return cached ?: emptyList() // nothing on the branch yet — don't seed the cache
+        val trips = parse(remote)
         cache.writeText(encode(trips))
         return trips
     }
