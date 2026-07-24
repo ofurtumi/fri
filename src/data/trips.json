@@ -25,9 +25,9 @@
     "start": { "name": "Reykjavík", "lat": 64.1395, "lng": -21.8958 },
     "startDate": "2026-07-24",
     "stats": [
-      { "label": "Fiskar", "value": 0 },
-      { "label": "Vötn", "value": 0 },
-      { "label": "Kílómetrar", "value": 0 }
+      { "label": "Fiskar", "value": "Engir" },
+      { "label": "Vötn", "value": "Engin" },
+      { "label": "Kílómetrar", "value": "0" }
     ]
   }
 ]
